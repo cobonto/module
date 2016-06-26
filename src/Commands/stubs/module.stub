@@ -1,0 +1,14 @@
+<?php
+namespace DummyNamespace;
+use Module\Classes\Module as ParentModule;
+class DummyClass extends ParentModule
+{
+    public function install($author,$name)
+    {
+       return parent::install($author,$name);
+    }
+    public function unInstall($author,$name)
+    {
+         return parent::unInstall($author,$name);
+    }
+}

@@ -18,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "SPYP\\Module\\": "src"
+            "Module\\": "src"
         }
     }
 }
