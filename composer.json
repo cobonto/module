@@ -1,0 +1,24 @@
+{
+    "name": "spyp/laravel-module",
+    "type": "library",
+    "description": "Module package for laravel",
+    "keywords": ["laravel","module","laravel module","modular system"],
+    "homepage": "https://github.com/spyp/laravel-module",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mohammad sharif ahrari",
+            "email": "msharif.ahrari@gmail.com",
+            "homepage": "https://github.com/spyp/laravel-module",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Module\\": "src"
+        }
+    }
+}
