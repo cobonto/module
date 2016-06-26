@@ -1,5 +1,5 @@
 {
-    "name": "spyp/laravel-module",
+    "name": "spyp/laravel-module-package",
     "type": "library",
     "description": "Module package for laravel",
     "keywords": ["laravel","module","laravel module","modular system"],
