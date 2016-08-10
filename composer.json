@@ -1,9 +1,9 @@
 {
-    "name": "spyp/laravel-module-package",
+    "name": "RmsCms/module",
     "type": "library",
     "description": "Module package for laravel",
     "keywords": ["laravel","module","laravel module","modular system"],
-    "homepage": "https://github.com/spyp/laravel-module",
+    "homepage": "https://github.com/RmsCms/module",
     "license": "MIT",
     "authors": [
         {
