@@ -1,5 +1,5 @@
 {
-    "name": "RmsCms/module",
+    "name": "rmscms/module",
     "type": "library",
     "description": "Module package for laravel",
     "keywords": ["laravel","module","laravel module","modular system"],
