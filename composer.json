@@ -1,5 +1,5 @@
 {
-    "name": "rmscms/module",
+    "name": "cobonto/module",
     "type": "library",
     "description": "Module package for laravel",
     "keywords": ["laravel","module","laravel module","modular system"],
