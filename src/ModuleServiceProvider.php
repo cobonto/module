@@ -7,11 +7,13 @@ use Module\Commands\DbCreateCommand;
 use Module\Commands\DbMigrateCommand;
 use Module\Commands\InstallCommand;
 use Module\Commands\ModelCommand;
+use Module\Commands\ModuleMigrationCreator;
 use Module\Commands\NewCommand;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\ServiceProvider;
+use Module\Commands\UninstallCommand;
 
 class ModuleServiceProvider extends ServiceProvider
 {
@@ -26,7 +28,6 @@ class ModuleServiceProvider extends ServiceProvider
         $this->registerViewFinder();
         //
         $this->publishes([
-            __DIR__.'/db'=>database_path('/migrations'),
         ]);
     }
 
@@ -78,15 +79,15 @@ class ModuleServiceProvider extends ServiceProvider
      */
     protected function registerCreator()
     {
-        $this->app->bindIf('migration.creator', function ($app)
+        $this->app->bindIf('module.migration.creator', function ($app)
         {
-            return new MigrationCreator($app['files']);
+            return new ModuleMigrationCreator($app['files']);
         });
     }
 
     protected function registerCommands()
     {
-        $commands = ['Install', 'Model', 'Migration', 'New', 'CreateMigration', 'Controller'];
+        $commands = ['Install', 'Model', 'Migration', 'New', 'CreateMigration', 'Controller','Uninstall'];
         foreach ($commands as $command)
         {
             $this->{'register' . $command . 'Command'}();
@@ -98,7 +99,8 @@ class ModuleServiceProvider extends ServiceProvider
             'module.new',
             'module.controller',
             'module.model',
-            'module.install'
+            'module.install',
+            'module.uninstall'
         );
     }
 
@@ -117,12 +119,18 @@ class ModuleServiceProvider extends ServiceProvider
             return new InstallCommand($app['migrator'],$app['files']);
         });
     }
-
+    protected function registerUninstallCommand()
+    {
+        $this->app->singleton('module.uninstall', function ($app)
+        {
+            return new UninstallCommand($app['migrator'],$app['files']);
+        });
+    }
     protected function registerCreateMigrationCommand()
     {
         $this->app->singleton('module.db.create', function ($app)
         {
-            return new DbCreateCommand($app['migration.creator'], $app['composer']);
+            return new DbCreateCommand($app['module.migration.creator'], $app['composer']);
         });
     }
 

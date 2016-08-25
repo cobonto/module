@@ -2,60 +2,179 @@
 
 namespace Module\Classes;
 
+use Cobonto\Classes\Assign;
+use Cobonto\Classes\Traits\HelperForm;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use LaravelArdent\Ardent\Ardent;
-use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 class Module extends Ardent
 {
+    use HelperForm;
     //
     protected $table = 'modules';
     public $timestamps = false;
+    // local path
+    protected $localPath;
+    // name of module folder
+    public $name;
+    // name of author folder
+    public $author;
+    // version
+    public $version;
     // array of loaded modules instance to prevent instance again
-    protected static $instance = array();
-    public static $rules = array(
-        'name' => 'required|alpha_num',
-        'author' => 'required|alpha_num',
-        'version' => 'required|alpha_num',
+    protected static $instance = [];
+    // error
+    public $errors = [];
+    /** @var Assign */
+    protected $assign;
+    /** @var array config modules */
+    public $configs;
+    /** @var array hooks */
+    protected $hooks;
+    /** @var string prefix */
+    public $prefix;
+    /** @var string mediaPath */
+    public $mediaPath;
+    /** @var array rules */
+    public static $rules = [
+        'name' => 'required|string',
+        'author' => 'required|string',
+        'version' => 'required|string',
         'active' => 'required|integer',
-    );
+    ];
+
+    public function __construct(array $attributes = [])
+    {
+        $this->localPath = app_path() . '/Modules/' . $this->author . '/' . $this->name . '/';
+        $this->assign = app('assign');
+        $this->mediaPath = 'modules/'.strtolower($this->author).'/'.strtolower($this->name).'/';
+        $this->prefix = strtoupper($this->author) . '_' . strtoupper($this->name) . '_';
+        parent::__construct($attributes);
+        $this->bootModule();
+    }
+
+    protected function bootModule()
+    {
+
+    }
 
     // install method
-    public function install($author, $name)
+    public function install()
     {
-        // install module
-        // load json data
-        try
+        // check module is installed
+        if (self::isInstalled($this->author, $this->name))
         {
-            $data = Yaml::parse(file_get_contents(app_path() . '/Modules/' . $author . '/' . $name . '/module.yml'));
-        } catch (ParseException $e)
-        {
+            $this->errors[] = 'Module is currently installed';
             return false;
         }
-
-        // first check module is installed or not
-        if (self::isInstalled($data['author'], $data['name']))
+        // migrate
+        $this->migrate();
+        // add module in table modules
         {
-            return false;
-        }
-
-        else
-        {
-            $this->name = $name;
-            $this->author = $author;
-            $this->version = $data['version'];
-            $this->active = 1;
-            if (!$this->save())
+            $data = [
+                'name' => $this->name,
+                'author' => $this->author,
+                'version' => $this->version,
+                'active' => 1,
+            ];
+            if (!\DB::table('modules')->insert($data))
+            {
+                $this->errors[] = 'Problem install module';
                 return false;
+            }
             else
+            {
+                // install configurations
+                if (!$this->installConfigure())
+                    return false;
+                // add assets
+                if (!$this->copyAssets())
+                    return false;
+
                 return true;
+            }
+
         }
     }
 
-    public function unInstall($author, $name)
+    public function unInstall()
     {
-        return true;
+        $module = Module::getInstance($this->author, $this->name);
+        if (is_object($module))
+        {
+            $this->migrate('down');
+            if(!$this->uninstallConfigure())
+                return false;
+
+            if (!self::isInstalled($this->author, $this->name))
+            {
+                $this->errors[] = 'Module is currently is uninstalled';
+                return false;
+            }
+
+            // remove configurations
+            // first unRegister hooks for this module
+            if ($this->deleteModule($module))
+                return true;
+            else
+            {
+                $this->errors[] = 'Problem in uninstalling module';
+            }
+
+        }
+        else
+            return false;
+    }
+
+    protected function installConfigure()
+    {
+        if (!count($this->configs))
+            return true;
+        else
+        {
+            foreach ($this->configs as $key => $value)
+            {
+                if (!app('settings')->set($this->prefix . $key, $value))
+                {
+                    $this->errors[] = 'Problem add settings';
+                    return false;
+                }
+            }
+            return true;
+
+        }
+    }
+
+    protected function uninstallConfigure()
+    {
+        if (!count($this->configs))
+            return true;
+        else
+        {
+            foreach ($this->configs as $key => $value)
+            {
+                if (!app('settings')->deleteByName($this->prefix . $key))
+                {
+                    $this->errors[] = 'Problem add settings';
+                    return false;
+                }
+            }
+            return true;
+
+        }
+    }
+
+    /**
+     * check module is disk or not
+     * @param $author
+     * @param $name
+     * @return bool
+     */
+    public static function checkOnDisk($author, $name)
+    {
+        return (bool)app('files')->exists(app_path() . '/Modules/' . $author . '/' . $name . '/Module.php');
     }
 
     /**
@@ -80,6 +199,8 @@ class Module extends Ardent
      */
     public static function isInstalled($author, $name)
     {
+        if (!self::checkOnDisk($author, $name))
+            return false;
         return count(self::getFromDb($author, $name)) ? true : false;
     }
 
@@ -97,21 +218,14 @@ class Module extends Ardent
      */
     public static function getInstance($author, $name)
     {
+        // check module is exist in host
+        if (!self::checkOnDisk($author, $name))
+            return null;
         if (!isset(self::$instance[$author . '*' . $name]))
         {
             // get class namespace
             $class = strval(\App::getNamespace() . 'Modules\\' . $author . '\\' . $name . '\\Module');
-            // get version and active from db
-
-            $data = self::getFromDb($author, $name);
-            if (!$data)
-                return self::$instance[$author . '*' . $name] = null;
-            // fill data to module
-
-            $keys = get_object_vars($data);
             $object = new $class;
-            foreach ($keys as $key=>$value)
-                $object->{$key} = $value;
             self::$instance[$author . '*' . $name] = $object;
 
             // get data from database
@@ -129,5 +243,116 @@ class Module extends Ardent
     public function view($path, array $params)
     {
         return View('module_resource::' . $this->author . '.' . $this->name . '.resources.' . $path, $params);
+    }
+
+    /**
+     * get from disk
+     */
+    public static function getModulesFromDisk()
+    {
+        $authors = app('files')->directories(app_path('Modules'));
+        $results = [];
+        if ($authors && count($authors))
+        {
+            foreach ($authors as $author)
+            {
+                $authorName = basename($author);
+                $modules = app('files')->directories($author);
+                if ($modules && count($modules))
+                {
+                    foreach ($modules as $module)
+                    {
+                        // check module yaml
+                        $ymlPath = $module . '/module.yml';
+                        if (app('files')->exists($ymlPath))
+                        {
+                            $detail = Yaml::parse(app('files')->get($ymlPath));
+                            $results[$authorName][] = $detail;
+                        }
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * protected function delete module
+     */
+    protected function deleteModule($module)
+    {
+        return \DB::table('modules')->delete($module->id);
+    }
+
+    /**
+     * prepare and render configuration form
+     */
+    protected function renderConfigure()
+    {
+        $this->fillValues();
+        $this->tpl_form = 'admin.helpers.form.form';
+        $this->generateForm();
+        // assign some vars
+        $this->assign->params([
+            'form_url' => route('admin.modules.save', ['author' => strtolower(camel_case($this->author)), 'name' => strtolower(camel_case($this->name))]),
+            'route_list' => route('admin.modules.index'),
+        ]);
+        return view($this->tpl_form, $this->assign->getViewData());
+    }
+
+    // save configure
+    public function saveConfigure(Request $request)
+    {
+        // check for prepare switchers
+        $request = $this->calcPost($request);
+        foreach ($this->configs as $config => $value)
+        {
+            app('settings')->set($this->prefix . $config, $request->input($config));
+        }
+        return 'Update successfully';
+    }
+
+    /**
+     * fill values
+     */
+    protected function fillValues()
+    {
+        if ($this->configs && count($this->configs))
+            foreach ($this->configs as $key => $value)
+                $this->fields_values[$key] = app('settings')->get($this->prefix . $key);
+    }
+
+    /**
+     * migrate files from db/migration folder
+     * @param string $type
+     */
+    protected function migrate($type = 'up')
+    {
+        $files = app('files')->allFiles($this->localPath . '/db/migrate');
+        if ($files && count($files))
+        {
+            foreach ($files as $file)
+            {
+                require_once($file->getPathName());
+                $class = explode('.', $file->getFileName());
+                $class = $class[0];
+                $migrate = new $class;
+                if ($type == 'up')
+                    $migrate->up();
+                else
+                    $migrate->down();
+            }
+        }
+    }
+    protected function copyAssets()
+    {
+        $path = $this->localPath.'/assets';
+        if (app('files')->exists($path))
+        {
+            // destination
+            $dest = public_path() . '/modules/' . strtolower($this->author) . '/' . strtolower($this->name);
+           return app('files')->copyDirectory($path, $dest);
+        }
+        return true;
     }
 }

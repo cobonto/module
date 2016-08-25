@@ -81,4 +81,13 @@ class DbCreateCommand extends MigrateMakeCommand
 
         $this->line("<info>Created Migration:</info> $file");
     }
+    /**
+     * Get the full path name to the migration.
+     *
+     * @param  string  $name
+     * @param  string  $path
+     * @return string
+     */
+
+
 }

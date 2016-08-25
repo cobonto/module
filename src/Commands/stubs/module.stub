@@ -3,12 +3,21 @@ namespace DummyNamespace;
 use Module\Classes\Module as ParentModule;
 class DummyClass extends ParentModule
 {
-    public function install($author,$name)
+    /** module folder name */
+    public $name;
+
+    /** module folder author */
+    public $author;
+
+    /** module version */
+    public $version;
+
+    public function install()
     {
-       return parent::install($author,$name);
+       return parent::install();
     }
-    public function unInstall($author,$name)
+    public function unInstall()
     {
-         return parent::unInstall($author,$name);
+         return parent::unInstall();
     }
 }

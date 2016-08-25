@@ -101,6 +101,7 @@ class NewCommand extends ModuleCommand
         // create resource and assets folder and another needed folder
         $this->makeSubDirs($path);
         $this->info($this->type.' created successfully.');
+        \Cache::forget('modules');
     }
     /**
      * Get the console command arguments.
@@ -126,7 +127,7 @@ class NewCommand extends ModuleCommand
         $data = [
             'name'=>$inputName,
             'author'=>$inputAuthor,
-            'version'=>1.0,
+            'version'=>'1.0',
 
         ];
         $yml = Yaml::dump($data);
