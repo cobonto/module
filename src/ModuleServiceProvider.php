@@ -2,6 +2,9 @@
 
 namespace Module;
 
+use Illuminate\Translation\Translator;
+use Module\Classes\Translation\ModuleFileLoader;
+use Module\Classes\Translation\ModuleTranslator;
 use Module\Commands\ControllerCommand;
 use Module\Commands\DbCreateCommand;
 use Module\Commands\DbMigrateCommand;
@@ -10,7 +13,6 @@ use Module\Commands\ModelCommand;
 use Module\Commands\ModuleMigrationCreator;
 use Module\Commands\NewCommand;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
-use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\ServiceProvider;
 use Module\Commands\UninstallCommand;
@@ -22,15 +24,6 @@ class ModuleServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
-    {
-        //
-        $this->registerViewFinder();
-        //
-        $this->publishes([
-        ]);
-    }
-
     /**
      * Register the application services.
      *
@@ -40,6 +33,7 @@ class ModuleServiceProvider extends ServiceProvider
     {
         $this->registerRepository();
         $this->registerMigrator();
+        $this->registerTranslation();
         // for create migration
         $this->registerCreator();
         // for create migration
@@ -47,6 +41,16 @@ class ModuleServiceProvider extends ServiceProvider
         // add commands
         $this->registerCommands();
 
+    }
+    public function boot()
+    {
+        // register language source
+        $this->loadTranslationsFrom($this->app->basePath().'/app/Modules','Modules');
+        //
+        $this->registerViewFinder();
+        //
+        $this->publishes([
+        ]);
     }
 
     protected function registerRepository()
@@ -160,5 +164,38 @@ class ModuleServiceProvider extends ServiceProvider
     protected function registerViewFinder()
     {
         view()->addNamespace('module_resource', app_path('Modules'));
+    }
+    protected function registerLoader()
+    {
+        $this->app->singleton('translation.loader', function ($app) {
+            return new ModuleFileLoader($app['files'], $app['path.lang']);
+        });
+    }
+    protected function registerTranslation()
+    {
+        $this->registerLoader();
+        $this->app->singleton('translator', function ($app) {
+            $loader = $app['translation.loader'];
+
+            // When registering the translator component, we'll need to set the default
+            // locale as well as the fallback locale. So, we'll grab the application
+            // configuration so we can easily get both of these values from there.
+            $locale = $app['config']['app.locale'];
+
+            $trans = new ModuleTranslator($loader, $locale);
+
+            $trans->setFallback($app['config']['app.fallback_locale']);
+
+            return $trans;
+        });
+    }
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return ['translator', 'translation.loader'];
     }
 }

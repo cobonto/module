@@ -113,40 +113,4 @@ class ControllerCommand extends ModuleCommand
             ['controller', InputArgument::OPTIONAL, 'The name of the controller'],
         ];
     }
-
-    /**
-     * create yml file info about module
-     * @param $path
-     * @param $inputAuthor
-     * @param $inputName
-     */
-    protected function makeYml($path,$inputAuthor,$inputName)
-    {
-        $data = [
-            'name'=>$inputName,
-            'author'=>$inputAuthor,
-            'version'=>1.0,
-
-        ];
-        $yml = Yaml::dump($data);
-        $this->files->put(dirname($path).'/module.yml',$yml);
-    }
-
-    public function makeSubDirs($path)
-    {
-        $directories =[
-            'resources',
-            'translate',
-            'assets',
-            'db',
-            'db/migrate',
-            'db/seed',
-        ];
-        foreach($directories as $directory)
-        {
-            if (! $this->files->isDirectory(dirname($path).'/'.$directory)) {
-                $this->files->makeDirectory(dirname($path).'/'.$directory, 0777, true, true);
-            }
-        }
-    }
 }

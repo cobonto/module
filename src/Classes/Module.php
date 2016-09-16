@@ -49,9 +49,15 @@ class Module extends Ardent
     {
         $this->localPath = app_path() . '/Modules/' . $this->author . '/' . $this->name . '/';
         $this->assign = app('assign');
-        $this->mediaPath = 'modules/'.strtolower($this->author).'/'.strtolower($this->name).'/';
+        $this->mediaPath = 'modules/' . strtolower($this->author) . '/' . strtolower($this->name) . '/';
         $this->prefix = strtoupper($this->author) . '_' . strtoupper($this->name) . '_';
         parent::__construct($attributes);
+        // get id from database
+        $data = Module::getFromDb($this->author, $this->name);
+        if ($data)
+            $this->id = $data->id;
+        else
+            $this->id = null;
         $this->bootModule();
     }
 
@@ -64,7 +70,12 @@ class Module extends Ardent
     public function install()
     {
         // check module is installed
-        if (self::isInstalled($this->author, $this->name))
+        if (!self::checkOnDisk($this->author, $this->name))
+        {
+            $this->errors[] = 'Module not found';
+            return false;
+        }
+        if ($this->id)
         {
             $this->errors[] = 'Module is currently installed';
             return false;
@@ -86,13 +97,18 @@ class Module extends Ardent
             }
             else
             {
+                // get for module
+                $data = Module::getFromDb($this->author, $this->name);
+                $this->id = $data->id;
                 // install configurations
                 if (!$this->installConfigure())
                     return false;
                 // add assets
                 if (!$this->copyAssets())
                     return false;
-
+                // register hooks
+                if (count($this->hooks))
+                    $this->registerHooks($this->hooks);
                 return true;
             }
 
@@ -101,31 +117,34 @@ class Module extends Ardent
 
     public function unInstall()
     {
-        $module = Module::getInstance($this->author, $this->name);
-        if (is_object($module))
+        // check module is installed
+        if (!Module::checkOnDisk($this->author, $this->name))
+        {
+            $this->errors[] = 'Module not found';
+            return false;
+        }
+        if ($this->id)
         {
             $this->migrate('down');
-            if(!$this->uninstallConfigure())
-                return false;
-
-            if (!self::isInstalled($this->author, $this->name))
+            if (!$this->uninstallConfigure())
             {
-                $this->errors[] = 'Module is currently is uninstalled';
+                $this->errors[] = 'Problem in delete configuration';
                 return false;
             }
-
-            // remove configurations
-            // first unRegister hooks for this module
-            if ($this->deleteModule($module))
-                return true;
-            else
+            if (!$this->deleteModule())
             {
                 $this->errors[] = 'Problem in uninstalling module';
+                return false;
             }
-
+            else
+                return true;
         }
         else
+        {
+            $this->errors[] = 'Module is currently is uninstalled';
             return false;
+        }
+
     }
 
     protected function installConfigure()
@@ -155,11 +174,7 @@ class Module extends Ardent
         {
             foreach ($this->configs as $key => $value)
             {
-                if (!app('settings')->deleteByName($this->prefix . $key))
-                {
-                    $this->errors[] = 'Problem add settings';
-                    return false;
-                }
+                app('settings')->deleteByName($this->prefix . $key);
             }
             return true;
 
@@ -183,11 +198,11 @@ class Module extends Ardent
      */
     public function registerHooks(array $hooks)
     {
-        $hooks[] = $this->name;
-        foreach ($hooks as $hook)
-        {
-            Hook::register($hook, $this->id);
-        }
+        if(count($this->hooks))
+            foreach ($hooks as $hook)
+            {
+                Hook::register($hook, $this->id);
+            }
         return true;
     }
 
@@ -240,8 +255,9 @@ class Module extends Ardent
      * @param array $params
      * @return View
      */
-    public function view($path, array $params)
+    public function view($path, array $params = [])
     {
+        $params = array_add($params, 'module', $this);
         return View('module_resource::' . $this->author . '.' . $this->name . '.resources.' . $path, $params);
     }
 
@@ -277,11 +293,11 @@ class Module extends Ardent
     }
 
     /**
-     * protected function delete module
+     *   delete module
      */
-    protected function deleteModule($module)
+    protected function deleteModule()
     {
-        return \DB::table('modules')->delete($module->id);
+        return \DB::table('modules')->delete($this->id);
     }
 
     /**
@@ -344,15 +360,65 @@ class Module extends Ardent
             }
         }
     }
+
     protected function copyAssets()
     {
-        $path = $this->localPath.'/assets';
+        $path = $this->localPath . '/assets';
         if (app('files')->exists($path))
         {
             // destination
             $dest = public_path() . '/modules/' . strtolower($this->author) . '/' . strtolower($this->name);
-           return app('files')->copyDirectory($path, $dest);
+            return app('files')->copyDirectory($path, $dest);
         }
         return true;
+    }
+
+    /**
+     * get translated string
+     * @param $string
+     * @return string|\Symfony\Component\Translation\TranslatorInterface
+     */
+    public function lang($string)
+    {
+        return trans('Modules::' . $this->author . '.' . $this->name . '.' . $string);
+    }
+
+    /**
+     * add css file for module
+     * @param $files
+     */
+    public function addCSS($files)
+    {
+        if(!is_array($files))
+            $files = [$files];
+        foreach($files as $key=>$file)
+        {
+            $files[$key] = $this->mediaPath.'css/'.$file;
+        }
+        $this->assign->addCSS($files);
+    }
+    /**
+     * add js file for module
+     * @param $files
+     */
+    public function addJS($files)
+    {
+        if(!is_array($files))
+            $files = [$files];
+        foreach($files as $key=>$file)
+        {
+            $files[$key] = $this->mediaPath.'js/'.$file;
+        }
+        $this->assign->addJS($files);
+    }
+    /**
+     * add plugin file for module
+     * @param $files
+     */
+    public function addPlugin($file)
+    {
+        $path = strtolower($this->author).'/'.strtolower($this->name).'/plugins/';
+        $this->assign->addJS($path . $file . '/' . $file . '.min.js');
+        $this->assign->addCSS($path . $file . '/' . $file . '.css');
     }
 }
