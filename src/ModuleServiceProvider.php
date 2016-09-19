@@ -49,8 +49,9 @@ class ModuleServiceProvider extends ServiceProvider
         //
         $this->registerViewFinder();
         //
-        $this->publishes([
-        ]);
+        if (! $this->app->routesAreCached()) {
+            require __DIR__.'/../routes.php';
+        }
     }
 
     protected function registerRepository()
