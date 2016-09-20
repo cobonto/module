@@ -266,6 +266,9 @@ class Module extends Ardent
      */
     public static function getModulesFromDisk()
     {
+        // check Modules folder is created or not
+        if(!app('files')->exists(app_path('Modules')))
+            app('files')->makeDirectory(app_path('Modules'));
         $authors = app('files')->directories(app_path('Modules'));
         $results = [];
         if ($authors && count($authors))
