@@ -420,7 +420,7 @@ class Module extends Ardent
      */
     public function addPlugin($file)
     {
-        $path = strtolower($this->author).'/'.strtolower($this->name).'/plugins/';
+        $path = $this->mediaPath.'plugins/';
         $this->assign->addJS($path . $file . '/' . $file . '.min.js');
         $this->assign->addCSS($path . $file . '/' . $file . '.css');
     }
