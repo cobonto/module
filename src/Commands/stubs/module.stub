@@ -12,12 +12,8 @@ class DummyClass extends ParentModule
     /** module version */
     public $version;
 
-    public function install()
+    protected function bootModule()
     {
-       return parent::install();
-    }
-    public function unInstall()
-    {
-         return parent::unInstall();
+
     }
 }
