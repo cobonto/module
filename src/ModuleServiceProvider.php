@@ -50,7 +50,7 @@ class ModuleServiceProvider extends ServiceProvider
         $this->registerViewFinder();
         //
         if (! $this->app->routesAreCached()) {
-            if (file_exists(base_path().DIRECTORY_SEPARATOR.'.env'))
+            if (file_exists(base_path().DIRECTORY_SEPARATOR.'.env') && config('APP_INSTALL'))
             {
                 require __DIR__ . '/../routes.php';
             }
