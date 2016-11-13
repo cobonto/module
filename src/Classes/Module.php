@@ -37,6 +37,8 @@ class Module extends Ardent
     public $prefix;
     /** @var string mediaPath */
     public $mediaPath;
+    /** @var bool core module  */
+    public $core = false;
     /** @var array rules */
     public static $rules = [
         'name' => 'required|string',
@@ -117,6 +119,11 @@ class Module extends Ardent
 
     public function unInstall()
     {
+        if($this->core)
+        {
+            $this->errors[] = 'Can not uninstall core modules';
+            return false;
+        }
         // check module is installed
         if (!Module::checkOnDisk($this->author, $this->name))
         {
@@ -216,7 +223,7 @@ class Module extends Ardent
     {
         if (!self::checkOnDisk($author, $name))
             return false;
-        return count(self::getFromDb($author, $name)) ? true : false;
+        return self::getFromDb($author, $name);
     }
 
     public static function getFromDb($author, $name)
@@ -258,7 +265,7 @@ class Module extends Ardent
     public function view($path, array $params = [])
     {
         $params = array_add($params, 'module', $this);
-        return View('module_resource::' . $this->author . '.' . $this->name . '.resources.' . $path, $params);
+        return view('module_resource::' . $this->author . '.' . $this->name . '.resources.' . $path, $params);
     }
 
     /**
@@ -313,8 +320,8 @@ class Module extends Ardent
         $this->generateForm();
         // assign some vars
         $this->assign->params([
-            'form_url' => route('admin.modules.save', ['author' => strtolower(camel_case($this->author)), 'name' => strtolower(camel_case($this->name))]),
-            'route_list' => route('admin.modules.index'),
+            'form_url' => route(config('app.admin_url').'.modules.save', ['author' => strtolower(camel_case($this->author)), 'name' => strtolower(camel_case($this->name))]),
+            'route_list' => route(config('app.admin_url').'.modules.index'),
         ]);
         return view($this->tpl_form, $this->assign->getViewData());
     }
