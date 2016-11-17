@@ -405,7 +405,7 @@ class Module extends Ardent
         {
             $files[$key] = $this->mediaPath.'css/'.$file;
         }
-        $this->assign->addCSS($files);
+        $this->assign->addCSS($files,true);
     }
     /**
      * add js file for module
@@ -419,7 +419,7 @@ class Module extends Ardent
         {
             $files[$key] = $this->mediaPath.'js/'.$file;
         }
-        $this->assign->addJS($files);
+        $this->assign->addJS($files,true);
     }
     /**
      * add plugin file for module
@@ -428,7 +428,7 @@ class Module extends Ardent
     public function addPlugin($file)
     {
         $path = $this->mediaPath.'plugins/';
-        $this->assign->addJS($path . $file . '/' . $file . '.min.js');
-        $this->assign->addCSS($path . $file . '/' . $file . '.css');
+        $this->assign->addJS($path . $file . '/' . $file . '.min.js',true);
+        $this->assign->addCSS($path . $file . '/' . $file . '.css',true);
     }
 }
