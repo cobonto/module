@@ -39,6 +39,8 @@ class Module extends Ardent
     public $mediaPath;
     /** @var bool core module  */
     public $core = false;
+    /** @var string namespace */
+    protected $nameSpaceControllers;
     /** @var array rules */
     public static $rules = [
         'name' => 'required|string',
@@ -53,6 +55,7 @@ class Module extends Ardent
         $this->assign = app('assign');
         $this->mediaPath = 'modules/' . strtolower($this->author) . '/' . strtolower($this->name) . '/';
         $this->prefix = strtoupper($this->author) . '_' . strtoupper($this->name) . '_';
+        $this->nameSpaceControllers = app()->getNamespace().'Modules\\'.$this->author.'\\'.$this->name.'\Controllers\\';
         parent::__construct($attributes);
         // get id from database
         $data = Module::getFromDb($this->author, $this->name);
