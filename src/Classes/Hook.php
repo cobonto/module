@@ -23,25 +23,19 @@ class Hook extends Ardent
      */
     public static function register($hook, $id_module)
     {
-        if (!$id = self::isRegistered($hook))
+        $Hook =  self::isRegistered($hook);
+        if (!$Hook)
         {
             // first register hook in database
-            $object = new Hook();
-            $object->name = $hook;
-            if (!$object->save())
+            $Hook = new Hook();
+            $Hook->name = $hook;
+            if (!$Hook->save())
             {
-                \Log::info($object->errors());
+                \Log::info($Hook->errors());
                 return false;
             }
-            else
-                $id = $object->id;
         }
-        // we have id now we add data to hooks_modules table
-        $position = self::getHighestPosition($hook) + 1;
-        \DB::table('hooks_modules')->insert(
-            ['id_module' => $id_module, 'id_hook' => $id, 'position' => $position]
-        );
-        return true;
+        return $Hook->registerModule($id_module);
 
     }
 
@@ -84,12 +78,11 @@ class Hook extends Ardent
      */
     public static function getModulesByName($hook)
     {
-        Hook::$hookForRun = $hook;
-        return  \Cache::remember('hook'.$hook,100000,function(){
+        return  \Cache::remember('hook'.$hook,100000,function() use($hook){
             return \DB::table('modules AS m')->select('m.*','hm.position')
                 ->leftJoin('hooks_modules AS hm', 'hm.id_module', '=', 'm.id')
                 ->leftJoin('hooks AS h', 'h.id', '=', 'hm.id_hook')
-                ->where('h.name', Hook::$hookForRun)
+                ->where('h.name', $hook)
                 ->where('m.active', '1')
                 ->orderBy('hm.position', 'ASC')
                 ->get();
@@ -98,23 +91,23 @@ class Hook extends Ardent
     /**
      * check hook is registered in system
      * @param string $hook
-     * @return bool
+     * @return bool|Hook
      */
     public static function isRegistered($hook)
     {
-        return (int)\DB::table('hooks')->where('name', $hook)->value('id');
+        return Hook::where('name', $hook)->first();
     }
 
     /**
      * get highest position of given hook
-     * @param $hook
+     * @param int $id_hook
      * @return int
      */
-    public static function getHighestPosition($hook)
+    public static function getHighestPosition($id_hook)
     {
         return (int)\DB::table('hooks_modules as hm')->
         leftJoin('hooks as h', 'h.id', '=', 'hm.id_hook')->
-        where('h.name',$hook)->
+        where('h.id',$id_hook)->
         orderBy('hm.position', 'DESC')->value('position');
     }
 
@@ -123,8 +116,22 @@ class Hook extends Ardent
      */
     public static function getHooks()
     {
-        return \Cache::remember('hooks',1000,function(){
+        return \Cache::remember('hooks',100000,function(){
             return \DB::table('hooks')->get();
         });
+    }
+    public function moduleIsRegistered($id_module)
+    {
+        return (bool)\DB::table('hooks_modules as hm')->
+            where(['id_module'=>$id_module,'id_hook'=>$this->id])->first();
+    }
+    public function registerModule($id_module)
+    {
+        // we have id now we add data to hooks_modules table
+        $position = self::getHighestPosition($this->id) + 1;
+        \DB::table('hooks_modules')->insert(
+            ['id_module' => $id_module, 'id_hook' => $this->id, 'position' => $position]
+        );
+        return true;
     }
 }

@@ -239,7 +239,7 @@ class Module extends Ardent
      * get instance of module object
      * @param $author
      * @param $name
-     * @return mixed
+     * @return bool|Module
      */
     public static function getInstance($author, $name)
     {
@@ -433,5 +433,74 @@ class Module extends Ardent
         $path = $this->mediaPath.'plugins/';
         $this->assign->addJS($path . $file . '/' . $file . '.min.js',true);
         $this->assign->addCSS($path . $file . '/' . $file . '.css',true);
+    }
+
+    /**
+     * regenerate cache
+     *  @return array
+     */
+    public static function getModules()
+    {
+        return \Cache::remember('modules', 604800, function ()
+        {
+            $diskModules = Module::getModulesFromDisk();
+            if ($diskModules)
+                return self::checkModulesInDb($diskModules);
+            else
+                return [];
+        });
+    }
+    protected static function checkModulesInDb($modules)
+    {
+        foreach ($modules as $author => &$module)
+        {
+            foreach ($module as &$subModule)
+            {
+                if ($data = Module::isInstalled($author, $subModule['name']))
+                {
+                    $subModule['installed'] = 1;
+                    $subModule['active'] = $data->active;
+                    $moduleClass = Module::getInstance($author, $subModule['name']);
+                    if (is_object($moduleClass))
+                    {
+                        if (method_exists($moduleClass, 'configuration'))
+                            $subModule['configurable'] = 1;
+
+                        $subModule['core']=$moduleClass->core;
+                    }
+                }
+            }
+        }
+        return $modules;
+    }
+    /**
+     * Get name of all modules that exists
+     * @param string $file that must be exits
+     * @return array
+     */
+    public static function getModulesByFile($file = 'Module.php')
+    {
+        $modules = Module::getModules();
+        $source = app_path('Modules' . DIRECTORY_SEPARATOR . '{author}' . DIRECTORY_SEPARATOR . '{module}' . DIRECTORY_SEPARATOR . $file);
+        $files = [];
+        if ($modules && count($modules))
+            foreach ($modules as $author => $subModules)
+            {
+                foreach ($subModules as $module)
+                {
+                    $data = ['{author}' => $module['author'], '{module}' => $module['name']];
+                    $real_source = str_replace(array_keys($data), array_values($data), $source);
+                    if (\File::exists($real_source))
+                    {
+                        $files[] = [
+                            'author'=>$author,
+                            'module'=>$module,
+                            'name'=>$author . DIRECTORY_SEPARATOR . $module['name'],
+                            'installed'=>isset($module['installed']),
+                        ];
+                    }
+                }
+            }
+        return $files;
     }
 }
