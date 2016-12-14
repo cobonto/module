@@ -8,7 +8,9 @@ use Module\Classes\Translation\ModuleTranslator;
 use Module\Commands\ControllerCommand;
 use Module\Commands\DbCreateCommand;
 use Module\Commands\DbMigrateCommand;
+use Module\Commands\EventCommand;
 use Module\Commands\InstallCommand;
+use Module\Commands\ListenerCommand;
 use Module\Commands\ModelCommand;
 use Module\Commands\ModuleMigrationCreator;
 use Module\Commands\NewCommand;
@@ -95,7 +97,9 @@ class ModuleServiceProvider extends ServiceProvider
 
     protected function registerCommands()
     {
-        $commands = ['Install', 'Model', 'Migration', 'New', 'CreateMigration', 'Controller','Uninstall'];
+        $commands = ['Install', 'Model', 'Migration', 'New',
+                    'CreateMigration', 'Controller','Uninstall'
+                    ,'Event','Listener'];
         foreach ($commands as $command)
         {
             $this->{'register' . $command . 'Command'}();
@@ -108,7 +112,9 @@ class ModuleServiceProvider extends ServiceProvider
             'module.controller',
             'module.model',
             'module.install',
-            'module.uninstall'
+            'module.uninstall',
+            'module.event',
+            'module.listener'
         );
     }
 
@@ -125,6 +131,20 @@ class ModuleServiceProvider extends ServiceProvider
         $this->app->singleton('module.install', function ($app)
         {
             return new InstallCommand($app['migrator'],$app['files']);
+        });
+    }
+    protected function registerEventCommand()
+    {
+        $this->app->singleton('module.event', function ($app)
+        {
+            return new EventCommand($app['files']);
+        });
+    }
+    protected function registerListenerCommand()
+    {
+        $this->app->singleton('module.listener', function ($app)
+        {
+            return new ListenerCommand($app['files']);
         });
     }
     protected function registerUninstallCommand()

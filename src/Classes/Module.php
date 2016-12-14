@@ -39,8 +39,10 @@ class Module extends Ardent
     public $mediaPath;
     /** @var bool core module  */
     public $core = false;
-    /** @var string namespace */
+    /** @var string $namespaceController */
     protected $nameSpaceControllers;
+    /** @var string namespace */
+    protected $nameSpace;
     /** @var array rules */
     public static $rules = [
         'name' => 'required|string',
@@ -56,6 +58,7 @@ class Module extends Ardent
         $this->mediaPath = 'modules/' . strtolower($this->author) . '/' . strtolower($this->name) . '/';
         $this->prefix = strtoupper($this->author) . '_' . strtoupper($this->name) . '_';
         $this->nameSpaceControllers = app()->getNamespace().'Modules\\'.$this->author.'\\'.$this->name.'\Controllers\\';
+        $this->nameSpace = app()->getNamespace().'Modules\\'.$this->author.'\\'.$this->name.'\\';
         parent::__construct($attributes);
         // get id from database
         $data = Module::getFromDb($this->author, $this->name);
@@ -86,6 +89,9 @@ class Module extends Ardent
             return false;
         }
         // migrate
+        //register events
+        if(!$this->registerEvents())
+            return false;
         $this->migrate();
         // add module in table modules
         {
@@ -114,6 +120,7 @@ class Module extends Ardent
                 // register hooks
                 if (count($this->hooks))
                     $this->registerHooks($this->hooks);
+
                 return true;
             }
 
@@ -136,6 +143,11 @@ class Module extends Ardent
         if ($this->id)
         {
             $this->migrate('down');
+            if(!$this->unRegisterEvents())
+            {
+                $this->errors[] = 'problem in unregister Events';
+                return false;
+            }
             if (!$this->uninstallConfigure())
             {
                 $this->errors[] = 'Problem in delete configuration';
@@ -502,5 +514,36 @@ class Module extends Ardent
                 }
             }
         return $files;
+    }
+    /** events */
+    public function events()
+    {
+        return [];
+    }
+    /**
+     * register events to system
+     * @return bool
+     */
+    protected function registerEvents()
+    {
+        if(is_array($this->events()) && count($this->events()))
+        {
+            $event = new Event($this);
+            return $event->addEvents();
+        }
+        return true;
+    }
+    /**
+     * register events to system
+     * @return bool
+     */
+    protected function unRegisterEvents()
+    {
+        if(is_array($this->events()) && count($this->events()))
+        {
+            $event = new Event($this);
+            return $event->removeEvents();
+        }
+        return true;
     }
 }

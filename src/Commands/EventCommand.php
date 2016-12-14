@@ -1,33 +1,39 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: fara
+ * Date: 12/14/2016
+ * Time: 1:32 PM
+ */
 
 namespace Module\Commands;
 
 
 use Symfony\Component\Console\Input\InputArgument;
 
-class ModelCommand extends ModuleCommand
+class EventCommand extends ModuleCommand
 {
     /**
      * The console command name.
      *
      * @var string
      */
-    protected $name = 'module:model';
+    protected $name = 'module:event';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new Model for module';
+    protected $description = 'Create event for  Module';
 
     /**
      * The type of class being generated.
      *
      * @var string
      */
-    protected $type = 'Model';
-
+    protected $type = 'Event';
+    protected $event_name;
     /**
      * Get the stub file for the generator.
      *
@@ -36,12 +42,9 @@ class ModelCommand extends ModuleCommand
     protected function getStub()
     {
 
-        return __DIR__.'/stubs/model.stub';
+        return __DIR__.'/stubs/event.stub';
     }
-    /**
-     * @var string controller
-     */
-    protected $controller_name;
+
     /**
      * Get the default namespace for the class.
      *
@@ -77,27 +80,27 @@ class ModelCommand extends ModuleCommand
     {
         $namespace = $this->getNamespace($name);
 
-        return str_replace("use $namespace\Modules;\n", '', parent::buildClass($name));
+        return str_replace("use $namespace\\Modules;\n", '', parent::buildClass($name));
     }
     public function fire()
     {
-        $inputAuthor = trim($this->ask('Name of author?'));
-        $inputName = trim($this->ask('Name of module ?'));
-        $model = trim($this->ask('Name of model ?'));
-        $this->controller_name = $inputAuthor.'/'.$inputName.'/Models/'.$model;
-        $name = $this->parseName($this->controller_name);
-
+        $inputAuthor = trim($this->ask('Author name?'));
+        $inputName = trim($this->ask('Module name ?'));
+        $event = trim($this->ask('Module event?'));
+        $this->event_name = $inputAuthor.'/'.$inputName.'/Events/'.$event;
+        $name = $this->parseName($this->event_name);
         $path = $this->getPath($name);
 
-        if ($this->alreadyExists($this->controller_name)) {
+        if ($this->alreadyExists($this->event_name)) {
             $this->error($this->type.' already exists!');
 
             return false;
         }
 
         $this->makeDirectory($path);
-        // create Module.php file
+        // create event file
         $this->files->put($path, $this->buildClass($name));
+        // create resource and assets folder and another needed folder
         $this->info($this->type.' created successfully.');
     }
     /**
@@ -110,7 +113,6 @@ class ModelCommand extends ModuleCommand
         return [
             ['name', InputArgument::OPTIONAL, 'The name of the module'],
             ['author', InputArgument::OPTIONAL, 'The name of the author'],
-            ['model', InputArgument::OPTIONAL, 'The name of the controller'],
         ];
     }
 }
