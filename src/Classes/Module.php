@@ -92,6 +92,9 @@ class Module extends Ardent
         //register events
         if(!$this->registerEvents())
             return false;
+        // register middleware
+        if(!$this->registerMiddleware())
+            return false;
         $this->migrate();
         // add module in table modules
         {
@@ -146,6 +149,11 @@ class Module extends Ardent
             if(!$this->unRegisterEvents())
             {
                 $this->errors[] = 'problem in unregister Events';
+                return false;
+            }
+            if(!$this->unRegisterMiddleware())
+            {
+                $this->errors[] = 'problem in unregister middleware';
                 return false;
             }
             if (!$this->uninstallConfigure())
@@ -370,8 +378,10 @@ class Module extends Ardent
     protected function migrate($type = 'up')
     {
         $files = app('files')->allFiles($this->localPath . '/db/migrate');
-        if ($files && count($files))
+        if($files && count($files))
         {
+            if($type=='down')
+                $files = array_reverse($files);
             foreach ($files as $file)
             {
                 require_once($file->getPathName());
@@ -520,6 +530,10 @@ class Module extends Ardent
     {
         return [];
     }
+    public function middleware()
+    {
+        return [];
+    }
     /**
      * register events to system
      * @return bool
@@ -543,6 +557,32 @@ class Module extends Ardent
         {
             $event = new Event($this);
             return $event->removeEvents();
+        }
+        return true;
+    }
+    /**
+     * register events to system
+     * @return bool
+     */
+    protected function registerMiddleware()
+    {
+        if(is_array($this->events()) && count($this->events()))
+        {
+            $middleware = new Middleware($this);
+            return $middleware->addMiddleware();
+        }
+        return true;
+    }
+    /**
+     * register events to system
+     * @return bool
+     */
+    protected function unRegisterMiddleware()
+    {
+        if(is_array($this->middleware()) && count($this->middleware()))
+        {
+            $middleware = new Middleware($this);
+            return $middleware->removeMiddleware();
         }
         return true;
     }

@@ -2,7 +2,6 @@
 
 namespace Module;
 
-use Illuminate\Translation\Translator;
 use Module\Classes\Translation\ModuleFileLoader;
 use Module\Classes\Translation\ModuleTranslator;
 use Module\Commands\ControllerCommand;
@@ -42,6 +41,7 @@ class ModuleServiceProvider extends ServiceProvider
 
         // add commands
         $this->registerCommands();
+
 
     }
     public function boot()
