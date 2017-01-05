@@ -596,7 +596,7 @@ class Module extends Ardent
      * register events to system
      * @return bool
      */
-    protected function unRegisterMiddleware()
+    public function unRegisterMiddleware()
     {
         if(is_array($this->middleware()) && count($this->middleware()))
         {
