@@ -213,13 +213,19 @@ class Module extends Ardent
 
     /**
      * check module is disk or not
-     * @param $author
-     * @param $name
      * @return bool
      */
-    public static function checkOnDisk($author, $name)
+    public static function checkOnDisk()
     {
-        return (bool)app('files')->exists(app_path() . '/Modules/' . $author . '/' . $name . '/Module.php');
+        $args = func_get_args();
+        if(count($args)==2)
+            $module = $args[0].DIRECTORY_SEPARATOR.$args[1];
+        elseif(count($args)==1)
+            $module = $args[1];
+        else
+            throw  new \Exception();
+        $module = str_replace('\\',DIRECTORY_SEPARATOR,$module);
+        return (bool)app('files')->exists(app_path('Modules').DIRECTORY_SEPARATOR.$module.DIRECTORY_SEPARATOR.'Module.php');
     }
 
     /**
@@ -261,8 +267,21 @@ class Module extends Ardent
      * @param $name
      * @return bool|Module
      */
-    public static function getInstance($author, $name)
+    public static function getInstance()
     {
+        $args = func_get_args();
+        if(count($args)==2)
+        {
+            $author = $args[0];
+            $name = $args[1];
+        }
+
+        elseif(count($args)==1)
+        {
+            list($author,$name) = explode('\\',$args[0]);
+        }
+        else
+            throw  new \Exception();
         // check module is exist in host
         if (!self::checkOnDisk($author, $name))
             return null;

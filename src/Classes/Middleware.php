@@ -36,7 +36,7 @@ class Middleware
         }
         return true;
     }
-    protected function loadMiddleware()
+    public function loadMiddleware()
     {
         return app('files')->getRequire($this->getMiddlewareCachedPath());
     }
