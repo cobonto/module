@@ -60,7 +60,9 @@ class NewCommand extends ModuleCommand
     protected function getOptions()
     {
         return [
+            ['name', null, InputOption::VALUE_OPTIONAL, 'The name of module'],
 
+            ['author', null, InputOption::VALUE_OPTIONAL, 'the author of module'],
         ];
     }
 
@@ -76,11 +78,13 @@ class NewCommand extends ModuleCommand
     {
         $namespace = $this->getNamespace($name);
 
-        return str_replace("use $namespace\Modules;\n", '', parent::buildClass($name));
+        return str_replace("use $namespace\\Modules;\n", '', parent::buildClass($name));
     }
     public function fire()
     {
+        if(!$inputAuthor =$this->option('author'))
         $inputAuthor = trim($this->ask('Name of author?'));
+        if(!$inputName=$this->option('name'))
         $inputName = trim($this->ask('Name of module ?'));
         $this->module_name = $inputAuthor.'/'.$inputName.'/Module';
         $name = $this->parseName($this->module_name);

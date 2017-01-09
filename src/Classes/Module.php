@@ -557,7 +557,7 @@ class Module extends Ardent
      * register events to system
      * @return bool
      */
-    protected function registerEvents()
+    public function registerEvents()
     {
         if(is_array($this->events()) && count($this->events()))
         {
@@ -583,9 +583,9 @@ class Module extends Ardent
      * register events to system
      * @return bool
      */
-    protected function registerMiddleware()
+    public function registerMiddleware()
     {
-        if(is_array($this->events()) && count($this->events()))
+        if(is_array($this->middleware()) && count($this->middleware()))
         {
             $middleware = new Middleware($this);
             return $middleware->addMiddleware();

@@ -67,7 +67,7 @@ class Event
         }
         return true;
     }
-    protected function loadEvents()
+    public function loadEvents()
     {
        return app('files')->getRequire($this->getEventCachedPath());
     }
