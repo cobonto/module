@@ -16,7 +16,7 @@ class Module extends Ardent
     protected $table = 'modules';
     public $timestamps = false;
     // local path
-    protected $localPath;
+    public $localPath;
     // name of module folder
     public $name;
     // name of author folder
@@ -53,7 +53,7 @@ class Module extends Ardent
 
     public function __construct(array $attributes = [])
     {
-        $this->localPath = app_path() . '/Modules/' . $this->author . '/' . $this->name . '/';
+        $this->localPath = app_path() .DIRECTORY_SEPARATOR.'Modules'.DIRECTORY_SEPARATOR . $this->author . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
         $this->assign = app('assign');
         $this->mediaPath = 'modules/' . strtolower($this->author) . '/' . strtolower($this->name) . '/';
         $this->prefix = strtoupper($this->author) . '_' . strtoupper($this->name) . '_';
