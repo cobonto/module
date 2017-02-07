@@ -1,27 +1,20 @@
 <?php
 
 
-namespace Module\Classes;
+namespace Module\Classes\Actions;
 
 
-class Event
+class Event extends Action
 {
-    /**
-     * @var Module $module
-    */
-    protected $module;
-    public function __construct($module)
-    {
-        $this->module = $module;
-    }
+    protected $file='events';
     // add events to events.php in cache
-    public function addEvents()
+    public function add()
     {
         if($moduleEvents = $this->module->events())
         {
-            $systemEvents = $this->loadEvents();
+            $systemEvents = $this->load();
             if(isset($moduleEvents['listen']))
-            // for listen event we must check if exsits merge if not add it
+            // for listen event we must check if exists merge if not add it
             foreach ($moduleEvents['listen'] as $event => $listens)
             {
                 if(isset($systemEvents['listen'][$event]))
@@ -32,18 +25,18 @@ class Event
             // for subscribe
             if(isset($moduleEvents['subscribe']))
                 $systemEvents['subscribe'][] = $moduleEvents['subscribe'];
-            return $this->setEventsCached($systemEvents);
+            return $this->set($systemEvents);
         }
         return true;
     }
     // remove events from system
-    public function removeEvents()
+    public function remove()
     {
         if($moduleEvents = $this->module->events())
         {
-            $systemEvents = $this->loadEvents();
+            $systemEvents = $this->load();
             if (isset($moduleEvents['listen']))
-                // for listen event we must check if exsits merge if not add it
+                // for listen event we must check if exists merge if not add it
                 foreach ($moduleEvents['listen'] as $event => $listens)
                 {
                     if (isset($systemEvents['listen'][$event]))
@@ -63,20 +56,8 @@ class Event
                 if($key !==false)
                     unset($systemEvents['subscribe'][$key]);
             }
-            return $this->setEventsCached($systemEvents);
+            return $this->set($systemEvents);
         }
         return true;
-    }
-    public function loadEvents()
-    {
-       return app('files')->getRequire($this->getEventCachedPath());
-    }
-    protected function getEventCachedPath()
-    {
-        return app('path.bootstrap').DIRECTORY_SEPARATOR.'cache'.DIRECTORY_SEPARATOR.'events.php';
-    }
-    protected function setEventsCached($data)
-    {
-       return app('files')->put($this->getEventCachedPath(),'<?php'.PHP_EOL.'return '.var_export($data,true).';'.PHP_EOL);
     }
 }

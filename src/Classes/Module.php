@@ -8,12 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use LaravelArdent\Ardent\Ardent;
 use Symfony\Component\Yaml\Yaml;
+use Module\Classes\Actions\Middleware;
+use Module\Classes\Actions\Event;
 
 class Module extends Ardent
 {
     use HelperForm;
     //
     protected $table = 'modules';
+
     public $timestamps = false;
     // local path
     public $localPath;
@@ -80,12 +83,12 @@ class Module extends Ardent
         // check module is installed
         if (!self::checkOnDisk($this->author, $this->name))
         {
-            $this->errors[] = 'Module not found';
+            $this->errors[] = transTpl('module_not_found');
             return false;
         }
         if ($this->id)
         {
-            $this->errors[] = 'Module is currently installed';
+            $this->errors[] = transTpl('module_already_installed');
             return false;
         }
         // migrate
@@ -106,7 +109,7 @@ class Module extends Ardent
             ];
             if (!\DB::table('modules')->insert($data))
             {
-                $this->errors[] = 'Problem install module';
+                $this->errors[] = transTpl('problem_install_module');
                 return false;
             }
             else
@@ -134,13 +137,13 @@ class Module extends Ardent
     {
         if($this->core)
         {
-            $this->errors[] = 'Can not uninstall core modules';
+            $this->errors[] = transTpl('can_not_uninstall_core_module');
             return false;
         }
         // check module is installed
         if (!Module::checkOnDisk($this->author, $this->name))
         {
-            $this->errors[] = 'Module not found';
+            $this->errors[] = transTpl('module_not_found');
             return false;
         }
         if ($this->id)
@@ -148,22 +151,22 @@ class Module extends Ardent
             $this->migrate('down');
             if(!$this->unRegisterEvents())
             {
-                $this->errors[] = 'problem in unregister Events';
+                $this->errors[] = transTpl('problem_unregister_events');
                 return false;
             }
             if(!$this->unRegisterMiddleware())
             {
-                $this->errors[] = 'problem in unregister middleware';
+                $this->errors[] = transTpl('problem_unregister_middleware');
                 return false;
             }
             if (!$this->uninstallConfigure())
             {
-                $this->errors[] = 'Problem in delete configuration';
+                $this->errors[] = transTpl('problem_unregister_configuration');
                 return false;
             }
             if (!$this->deleteModule())
             {
-                $this->errors[] = 'Problem in uninstalling module';
+                $this->errors[] = transTpl('problem_uninstall_module');
                 return false;
             }
             else
@@ -171,7 +174,7 @@ class Module extends Ardent
         }
         else
         {
-            $this->errors[] = 'Module is currently is uninstalled';
+            $this->errors[] = transTpl('module_currently_uninstalled');
             return false;
         }
 
@@ -187,7 +190,7 @@ class Module extends Ardent
             {
                 if (!app('settings')->set($this->prefix . $key, $value))
                 {
-                    $this->errors[] = 'Problem add settings';
+                    $this->errors[] = transTpl('problem_install_configuration');
                     return false;
                 }
             }
@@ -377,7 +380,7 @@ class Module extends Ardent
         {
             app('settings')->set($this->prefix . $config, $request->input($config));
         }
-        return 'Update successfully';
+        return transTpl('update_success');
     }
 
     /**
@@ -562,7 +565,7 @@ class Module extends Ardent
         if(is_array($this->events()) && count($this->events()))
         {
             $event = new Event($this);
-            return $event->addEvents();
+            return $event->add();
         }
         return true;
     }
@@ -575,7 +578,7 @@ class Module extends Ardent
         if(is_array($this->events()) && count($this->events()))
         {
             $event = new Event($this);
-            return $event->removeEvents();
+            return $event->remove();
         }
         return true;
     }
@@ -588,7 +591,7 @@ class Module extends Ardent
         if(is_array($this->middleware()) && count($this->middleware()))
         {
             $middleware = new Middleware($this);
-            return $middleware->addMiddleware();
+            return $middleware->add();
         }
         return true;
     }
@@ -601,7 +604,7 @@ class Module extends Ardent
         if(is_array($this->middleware()) && count($this->middleware()))
         {
             $middleware = new Middleware($this);
-            return $middleware->removeMiddleware();
+            return $middleware->remove();
         }
         return true;
     }
