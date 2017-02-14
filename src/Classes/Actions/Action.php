@@ -9,6 +9,8 @@
 namespace Module\Classes\Actions;
 
 
+use Module\Classes\Module;
+
 abstract class Action implements ActionContract
 {
     /** @var Module */
@@ -22,7 +24,7 @@ abstract class Action implements ActionContract
 
     public function load()
     {
-        return app('files')->getRequire($this->getFile());
+        return app('files')->getRequire($this->get());
     }
     protected function get()
     {
@@ -30,6 +32,6 @@ abstract class Action implements ActionContract
     }
     protected function set($data)
     {
-        return app('files')->put($this->getFile(),'<?php'.PHP_EOL.'return '.var_export($data,true).';'.PHP_EOL);
+        return app('files')->put($this->get(),'<?php'.PHP_EOL.'return '.var_export($data,true).';'.PHP_EOL);
     }
 }
