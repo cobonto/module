@@ -402,39 +402,50 @@ class Module extends Ardent
      * @param string $type
      * @param array|bool $specific_files
      */
-    protected function migrate($type = 'up',$specific_files=false)
+    protected function migrate($type = 'up', $specific_files = false)
     {
-        if(!$specific_files)
+        if (!$specific_files)
         {
             $files = app('files')->allFiles($this->localPath . '/db/migrate');
+            if ($files && count($files))
+
+                $files = app('files')->allFiles($this->localPath . '/db/migrate');
             if ($files && count($files))
             {
                 if ($type == 'down')
                     $files = array_reverse($files);
                 foreach ($files as $file)
                 {
-                    require_once($file->getPathName());
-                    $class = explode('.', $file->getFileName());
-                    $class = $class[0];
-                    $migrate = new $class;
-                    if ($type == 'up')
-                        $migrate->up();
-                    else
-                        $migrate->down();
+                    if ($type == 'down')
+                        $files = array_reverse($files);
+                    foreach ($files as $file)
+                    {
+                        require_once($file->getPathName());
+                        $class = explode('.', $file->getFileName());
+                        $class = $class[0];
+                        $migrate = new $class;
+                        if ($type == 'up')
+                            $migrate->up();
+                        else
+                            $migrate->down();
+                    }
                 }
             }
         }
-        else{
-            $migrate_path = $this->localPath.'db'.DIRECTORY_SEPARATOR.'migrate'.DIRECTORY_SEPARATOR;
-            foreach($specific_files as $file)
+        else
+        {
+            $migrate_path = $this->localPath . 'db' . DIRECTORY_SEPARATOR . 'migrate' . DIRECTORY_SEPARATOR;
+            foreach ($specific_files as $file)
             {
-                require_once($migrate_path.$file);
-                $class = (explode('.',$file)[0]);
+                require_once($migrate_path . $file);
+                $class = (explode('.', $file)[0]);
                 $class = new $class;
-                if($type=='up'){
+                if ($type == 'up')
+                {
                     $class->up();
                 }
-                else{
+                else
+                {
                     $class->down();
                 }
             }
@@ -458,7 +469,8 @@ class Module extends Ardent
      * @param $string
      * @return string|\Symfony\Component\Translation\TranslatorInterface
      */
-    public function lang($string)
+    public
+    function lang($string)
     {
         return trans('Modules::' . $this->author . '.' . $this->name . '.' . $string);
     }
