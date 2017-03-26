@@ -402,7 +402,7 @@ class Module extends Ardent
      * @param string $type
      * @param array|bool $specific_files
      */
-    protected function migrate($type = 'up', $specific_files = false)
+    public function migrate($type = 'up', $specific_files = false)
     {
         if (!$specific_files)
         {
@@ -616,7 +616,7 @@ class Module extends Ardent
      * register events to system
      * @return bool
      */
-    protected function unRegisterEvents()
+    public function unRegisterEvents()
     {
         if (is_array($this->events()) && count($this->events()))
         {
