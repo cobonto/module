@@ -416,19 +416,14 @@ class Module extends Ardent
                     $files = array_reverse($files);
                 foreach ($files as $file)
                 {
-                    if ($type == 'down')
-                        $files = array_reverse($files);
-                    foreach ($files as $file)
-                    {
-                        require_once($file->getPathName());
-                        $class = explode('.', $file->getFileName());
-                        $class = $class[0];
-                        $migrate = new $class;
-                        if ($type == 'up')
-                            $migrate->up();
-                        else
-                            $migrate->down();
-                    }
+                    require_once($file->getPathName());
+                    $class = explode('.', $file->getFileName());
+                    $class = $class[0];
+                    $migrate = new $class;
+                    if ($type == 'up')
+                        $migrate->up();
+                    else
+                        $migrate->down();
                 }
             }
         }
