@@ -394,9 +394,12 @@ class Module extends Ardent
     {
         if ($this->configs && count($this->configs))
             foreach ($this->configs as $key => $value)
-                $this->fields_values[$key] = app('settings')->get($this->prefix . $key);
+                $this->fields_values[$key] = $this->settings($key);
     }
-
+    public function settings($key)
+    {
+        return app('settings')->get($this->prefix . $key);
+    }
     /**
      * migrate files from db/migration folder
      * @param string $type
@@ -406,10 +409,10 @@ class Module extends Ardent
     {
         if (!$specific_files)
         {
-            $files = app('files')->allFiles($this->localPath . '/db/migrate');
-            if ($files && count($files))
-
-                $files = app('files')->allFiles($this->localPath . '/db/migrate');
+            $files = array_sort(app('files')->allFiles($this->localPath . '/db/migrate'), function($file)
+            {
+                return $file->getFilename();
+            });
             if ($files && count($files))
             {
                 if ($type == 'down')
@@ -447,7 +450,7 @@ class Module extends Ardent
         }
     }
 
-    protected function copyAssets()
+    public function copyAssets()
     {
         $path = $this->localPath . '/assets';
         if (app('files')->exists($path))
