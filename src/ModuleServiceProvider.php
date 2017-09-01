@@ -99,7 +99,7 @@ class ModuleServiceProvider extends ServiceProvider
     {
         $commands = ['Install', 'Model', 'Migration', 'New',
                     'CreateMigration', 'Controller','Uninstall'
-                    ,'Event','Listener'];
+                    ,'Event'];
         foreach ($commands as $command)
         {
             $this->{'register' . $command . 'Command'}();
@@ -113,8 +113,7 @@ class ModuleServiceProvider extends ServiceProvider
             'module.model',
             'module.install',
             'module.uninstall',
-            'module.event',
-            'module.listener'
+            'module.event'
         );
     }
 
