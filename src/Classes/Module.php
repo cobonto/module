@@ -407,7 +407,7 @@ class Module extends Ardent
      */
     public function migrate($type = 'up', $specific_files = false)
     {
-        if (!$specific_files)
+        if (!$specific_files && \File::isDirectory($this->localPath . '/db/migrate'))
         {
             $files = array_sort(app('files')->allFiles($this->localPath . '/db/migrate'), function($file)
             {
