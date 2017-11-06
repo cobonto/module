@@ -22,7 +22,7 @@ class ModuleTranslator extends Translator
         // Here we will get the locale that should be used for the language line. If one
         // was not passed, we will use the default locales which was given to us when
         // the translator was instantiated. Then, we can load the lines and return.
-        $locales = $fallback ? $this->parseLocale($locale) : [$locale ?: $this->locale];
+        $locales = $fallback ? $this->localeArray($locale) : [$locale ?: $this->locale];
         if ($namespace != 'Modules')
         {
             foreach ($locales as $locale)
