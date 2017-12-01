@@ -53,7 +53,7 @@ class ModuleTranslator extends Translator
         {
             list($namespace, $author, $name, $item) = $this->parseModuleKey($key);
 
-            $locales = $fallback ? $this->parseLocale($locale) : [$locale ?: $this->locale];
+            $locales = $fallback ? $this->localeArray($locale) : [$locale ?: $this->locale];
             foreach ($locales as $locale)
             {
                 $this->moduleLoad($author, $name, $locale);
